@@ -378,11 +378,11 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .nav {
   max-width: var(--page); margin-inline: auto;
   display: flex; align-items: center; gap: 14px;
-  /* The logo now sets the header height, so padding stays minimal —
-     otherwise the sticky bar eats a third of a phone screen. */
-  padding: 8px var(--gut);
+  /* More padding below than above, so the logo sits lower in the bar
+     rather than hugging the top edge. */
+  padding: 14px var(--gut) 10px;
 }
-.logo { display: flex; align-items: center; gap: 11px; }
+.logo { display: flex; align-items: center; gap: 11px; flex: none; }
 
 /* Single source of truth for logo height — change --logo-h and the
    header, footer and their mobile sizes all follow. */
@@ -390,9 +390,12 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
   height: var(--logo-h, 92px);
   width: auto;
   display: block;
+  /* The wordmark's brush strokes sit high in the file, so a few pixels
+     of offset optically centres it against the nav links beside it. */
+  transform: translateY(var(--logo-drop, 6px));
   transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
 }
-.logo:hover img { opacity: 0.85; transform: translateY(-1px); }
+.logo:hover img { opacity: 0.85; transform: translateY(calc(var(--logo-drop, 6px) - 3px)); }
 .logo-text { display: none; }
 
 /* Fallback mark, still used in the admin sidebar */
@@ -406,13 +409,26 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 
 @media (max-width: 420px) { .logo img { height: 64px; } }
 
-.nav-links { display: none; gap: 6px; margin-inline: auto; }
+.nav-links {
+  display: none;
+  gap: 2px;
+  margin-inline: auto;
+  /* Links share one baseline; without this a wrapped label pushes its
+     neighbours out of line and the underlines end up at two heights. */
+  align-items: center;
+}
 .nav-link {
-  position: relative; padding: 8px 14px; font-size: 0.92rem; color: var(--dim);
+  position: relative;
+  padding: 8px 11px;
+  font-size: 0.88rem;
+  color: var(--dim);
+  /* Two-word labels like "All Products" and "Smart Watches" must not
+     break — a wrapped link is what threw the row out of alignment. */
+  white-space: nowrap;
   transition: color 0.28s var(--ease);
 }
 .nav-link::after {
-  content: ''; position: absolute; left: 14px; right: 14px; bottom: 2px; height: 2px;
+  content: ''; position: absolute; left: 11px; right: 11px; bottom: 0; height: 2px;
   background: var(--acid); transform: scaleX(0); transform-origin: left;
   transition: transform 0.32s var(--ease);
 }
@@ -433,10 +449,17 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .drawer a:hover { color: var(--acid); }
 .drawer a[aria-current='page'] { color: var(--acid); font-weight: 550; }
 
-@media (min-width: 900px) {
+/* The desktop row only fits once there is genuine space for a big logo
+   plus eight links. Below this the burger menu is the honest answer. */
+@media (min-width: 1180px) {
   .nav-links { display: flex; }
   .burger { display: none; }
   .nav-tail { margin-left: 0; }
+}
+
+/* Between tablet and full desktop, trim the logo rather than the links. */
+@media (min-width: 900px) and (max-width: 1320px) {
+  .logo img { height: 64px; }
 }
 
 /* ---------------------------------------------------------------------
@@ -750,7 +773,7 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 
 .foot { padding: 46px 0 40px; border-top: 1px solid var(--line-soft); margin-top: 64px; }
 .foot-grid { display: grid; gap: 30px; grid-template-columns: 1fr; }
-.foot .logo img { height: 100px; }
+.foot .logo img { height: 100px; --logo-drop: 0px; }
 
 .foot-col h4 {
   font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
