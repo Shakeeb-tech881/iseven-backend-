@@ -1,0 +1,75 @@
+### Health
+GET http://localhost:3000/api/health
+
+### Products, filtered
+GET http://localhost:3000/api/products?brand=samsung&inStock=true&sort=price_asc
+
+### Search
+GET http://localhost:3000/api/products?search=galaxy&limit=5
+
+### Detail
+GET http://localhost:3000/api/products/samsung-galaxy-s24-ultra-5g
+
+### EMI options for a given price
+GET http://localhost:3000/api/installment-plans?amount=289900
+
+### Log a WhatsApp click
+POST http://localhost:3000/api/inquiries
+Content-Type: application/json
+
+{ "productId": "prd_s24u", "variantId": "var_s24u_256_blk", "source": "product_page" }
+
+### Submit a callback request
+POST http://localhost:3000/api/leads
+Content-Type: application/json
+
+{
+  "name": "Nimal Perera",
+  "phone": "077 123 4567",
+  "city": "Colombo",
+  "productId": "prd_s24u",
+  "variantId": "var_s24u_256_blk",
+  "message": "Is the black one available?",
+  "consent": true
+}
+
+### Register
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{ "name": "Nimal Perera", "email": "nimal@example.com",
+  "phone": "0771234567", "password": "Test1234", "marketingConsent": true }
+
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{ "email": "nimal@example.com", "password": "Test1234" }
+
+### Me
+GET http://localhost:3000/api/auth/me
+Authorization: Bearer PASTE_ACCESS_TOKEN
+
+### Admin: leads inbox
+GET http://localhost:3000/api/admin/leads?status=NEW
+Authorization: Bearer PASTE_ADMIN_TOKEN
+
+### Admin: create product
+POST http://localhost:3000/api/admin/products
+Authorization: Bearer PASTE_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "name": "OPPO Reno 11",
+  "brandId": "brd_oppo",
+  "categoryId": "cat_phones",
+  "shortDesc": "Portrait camera specialist",
+  "condition": "NEW",
+  "warrantyType": "1 Year Agent Warranty",
+  "variants": [
+    { "storage": "256GB", "ram": "8GB", "color": "Wave Green",
+      "colorHex": "#2f6f5e", "price": 129900, "salePrice": 119900,
+      "stockStatus": "IN_STOCK", "sortOrder": 0 }
+  ],
+  "images": []
+}
