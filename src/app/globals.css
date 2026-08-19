@@ -270,6 +270,15 @@ button { font: inherit; color: inherit; }
 .btn-wa:disabled { background: transparent; color: var(--faint); border-color: var(--line); }
 
 .btn-block { width: 100%; }
+
+/* Product names can be long — "Samsung Galaxy S24 Ultra 5G" — so the
+   main inquiry button wraps rather than overflowing its pill. */
+.btn-wrap {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  padding-block: 14px;
+}
 .btn-sm { padding: 9px 16px; font-size: 0.85rem; }
 .btn-ghost { border-color: var(--line); }
 
