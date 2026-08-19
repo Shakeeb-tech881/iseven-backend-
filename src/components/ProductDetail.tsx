@@ -33,6 +33,10 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
     () => [...new Set(variants.map((v) => v.storage).filter(Boolean))] as string[],
     [variants],
   );
+  const rams = useMemo(
+    () => [...new Set(variants.map((v) => v.ram).filter(Boolean))] as string[],
+    [variants],
+  );
   const colors = useMemo(() => {
     const seen = new Map<string, string | null>();
     for (const v of variants) if (v.color && !seen.has(v.color)) seen.set(v.color, v.colorHex);
@@ -57,15 +61,34 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
 
   function pickStorage(storage: string) {
     pick(
-      variants.find((v) => v.storage === storage && v.color === selected.color) ??
-      variants.find((v) => v.storage === storage),
+      variants.find(
+        (v) => v.storage === storage && v.color === selected.color && v.ram === selected.ram,
+      ) ??
+        variants.find((v) => v.storage === storage && v.color === selected.color) ??
+        variants.find((v) => v.storage === storage),
+    );
+  }
+
+  function pickRam(ram: string) {
+    // Narrow from the most specific match outwards, so changing RAM keeps
+    // the storage and colour the customer already chose wherever that
+    // combination actually exists in stock.
+    pick(
+      variants.find(
+        (v) => v.ram === ram && v.storage === selected.storage && v.color === selected.color,
+      ) ??
+        variants.find((v) => v.ram === ram && v.storage === selected.storage) ??
+        variants.find((v) => v.ram === ram),
     );
   }
 
   function pickColor(color: string) {
     pick(
-      variants.find((v) => v.color === color && v.storage === selected.storage) ??
-      variants.find((v) => v.color === color),
+      variants.find(
+        (v) => v.color === color && v.storage === selected.storage && v.ram === selected.ram,
+      ) ??
+        variants.find((v) => v.color === color && v.storage === selected.storage) ??
+        variants.find((v) => v.color === color),
     );
   }
 
@@ -181,6 +204,37 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
                   })}
                 </div>
               </div>
+            )}
+
+            {rams.length > 1 && (
+              <div className="opt-group">
+                <span className="opt-label">RAM</span>
+                <div className="opt-row">
+                  {rams.map((r) => {
+                    const any = variants.some((v) => v.ram === r && v.stockStatus !== 'SOLD_OUT');
+                    return (
+                      <button
+                        key={r}
+                        className="chip"
+                        data-on={selected.ram === r}
+                        onClick={() => pickRam(r)}
+                        style={any ? undefined : { opacity: 0.45 }}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* One RAM figure across the range is not a choice, but it is
+                still something customers look for — state it rather than
+                hiding it in the WhatsApp message. */}
+            {rams.length === 1 && (
+              <p className="faint tiny" style={{ margin: '-8px 0 20px' }}>
+                {rams[0]} RAM
+              </p>
             )}
 
             {colors.length > 1 && (
