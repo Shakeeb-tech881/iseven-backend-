@@ -592,6 +592,15 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .pdp { display: grid; gap: 16px; padding-block: 20px 130px; }
 .pdp-media, .pdp-buy, .pdp-specs, .pdp-extra { min-width: 0; }
 .pdp-extra > .glass:first-child { margin-top: 0 !important; }
+
+/* Mobile reading order, set explicitly rather than inherited from the
+   markup: photos, then the price and buy button, then the spec table,
+   then about and instalments. A customer should never have to scroll
+   past a full specification table to find out what a phone costs. */
+.pdp-media { order: 1; }
+.pdp-buy   { order: 2; }
+.pdp-specs { order: 3; }
+.pdp-extra { order: 4; }
 .gallery { padding: 16px; }
 .gallery-main {
   position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden;
