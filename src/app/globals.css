@@ -586,7 +586,12 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
    Product detail
    --------------------------------------------------------------------- */
 
-.pdp { display: grid; gap: 26px; padding-block: 26px 130px; }
+/* Four explicit children so the reading order is deliberate rather than
+   a side effect of which column they happen to sit in.
+   Mobile order: photos → price → specs → about → instalments. */
+.pdp { display: grid; gap: 16px; padding-block: 20px 130px; }
+.pdp-media, .pdp-buy, .pdp-specs, .pdp-extra { min-width: 0; }
+.pdp-extra > .glass:first-child { margin-top: 0 !important; }
 .gallery { padding: 16px; }
 .gallery-main {
   position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden;
@@ -631,8 +636,19 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .emi-row:last-child { border-bottom: none; }
 
 @media (min-width: 920px) {
-  .pdp { grid-template-columns: 1fr 1fr; gap: 38px; align-items: start; padding-bottom: 60px; }
-  .pdp-aside { position: sticky; top: 92px; }
+  .pdp {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'media buy'
+      'specs extra';
+    gap: 20px 38px;
+    align-items: start;
+    padding-bottom: 60px;
+  }
+  .pdp-media { grid-area: media; }
+  .pdp-buy   { grid-area: buy; }
+  .pdp-specs { grid-area: specs; }
+  .pdp-extra { grid-area: extra; }
 }
 
 /* ---------------------------------------------------------------------
@@ -676,12 +692,34 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .slider {
   position: relative;
   width: 100%;
-  /* Tall enough to carry a headline on mobile, capped so it never eats
-     the whole viewport and hides the products below it. */
   height: clamp(380px, 62vh, 620px);
   overflow: hidden;
   background: var(--surface);
   isolation: isolate;
+}
+
+/* Banner artwork usually has text baked into it. Cropping to fill a tall
+   mobile box cuts that text off — as it did with "Galaxy Z Fold8 Ultr…".
+   On narrow screens fit the whole image instead and let the box follow
+   the artwork's own shape. */
+@media (max-width: 760px) {
+  .slider {
+    height: auto;
+    aspect-ratio: 16 / 10;
+    background: #000;
+  }
+  .slide img { object-fit: contain; transform: none; }
+  .slide[data-on='true'] img { transform: none; }
+
+  .slider-copy {
+    padding-bottom: 26px;
+    background:
+      linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 38%, transparent 68%);
+  }
+  .slider-title { font-size: clamp(1.5rem, 6.5vw, 2rem); max-width: 14ch; }
+  .slider-sub { font-size: 0.85rem; margin-top: 6px; }
+  .slider-copy .btn { padding: 10px 18px; font-size: 0.85rem; margin-top: 12px !important; }
+  .slider-dots { bottom: 10px; }
 }
 
 .slider-track { position: absolute; inset: 0; }
