@@ -273,8 +273,11 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
                 fallbackUrl={whatsappLinks[selected.id] ?? '#'}
                 source="product_page"
                 disabled={soldOut}
-                label={`Ask about this ${selected.storage ?? ''}`.trim()}
-                className="btn btn-wa btn-block"
+                /* Name the phone, not the storage size. "Ask about this
+                   512GB" tells a customer nothing they did not already
+                   know; the model name is what they are deciding on. */
+                label={`Ask about the ${product.name}`}
+                className="btn btn-wa btn-block btn-wrap"
               />
               <p className="faint tiny" style={{ margin: 0, textAlign: 'center' }}>
                 {soldOut
