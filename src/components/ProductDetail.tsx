@@ -78,7 +78,7 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
     <>
       <div className="wrap pdp">
         {/* ---------- gallery ---------- */}
-        <div>
+        <div className="pdp-media">
           <div className="glass gallery">
             <div className="gallery-main">
               {image ? (
@@ -114,8 +114,13 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
             )}
           </div>
 
+        </div>
+
+        {/* Specs are their own grid child so mobile can place them after
+            the price, rather than burying the price below the table. */}
+        <div className="pdp-specs">
           {product.specs && Object.keys(product.specs).length > 0 && (
-            <div className="glass" style={{ padding: 22, marginTop: 16 }}>
+            <div className="glass" style={{ padding: 22 }}>
               <p className="eyebrow">Specification</p>
               <table className="specs">
                 <tbody>
@@ -132,7 +137,7 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
         </div>
 
         {/* ---------- buy panel ---------- */}
-        <div className="pdp-aside">
+        <div className="pdp-buy">
           <div className="glass" style={{ padding: 24 }}>
             <p className="eyebrow">{product.brand.name}</p>
             <h1 className="display h2" style={{ marginBottom: 10 }}>{product.name}</h1>
@@ -237,6 +242,10 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
               </div>
             )}
           </div>
+        </div>
+
+        {/* About and instalments always sit last. */}
+        <div className="pdp-extra">
 
           {product.description && (
             <div className="glass" style={{ padding: 22, marginTop: 16 }}>
