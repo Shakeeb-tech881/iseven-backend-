@@ -51,8 +51,8 @@ export default function Header({
           <Image
             src="/logo.png"
             alt={shopName}
-            width={900}
-            height={300}
+            width={520}
+            height={173}
             priority
           />
         </Link>
