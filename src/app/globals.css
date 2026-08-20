@@ -137,13 +137,34 @@ button { font: inherit; color: inherit; }
 .wrap { width: 100%; max-width: var(--page); margin-inline: auto; padding-inline: var(--gut); }
 .section { padding-block: 68px; }
 .section-tight { padding-block: 38px; }
+
+@media (max-width: 559px) {
+  /* The sticky bar is tall on a phone, so sections need less of their
+     own padding or the first screenful is mostly empty. */
+  .section { padding-block: 40px; }
+  .section-tight { padding-block: 22px; }
+}
 .row { display: flex; align-items: center; }
 .between { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 
+/* Two columns on a phone. One 250px-wide card per screen meant a single
+   product filled the viewport, which reads as an empty shop — a customer
+   cannot compare anything without scrolling. Two narrow cards is the
+   pattern every phone shop uses, and it halves the scrolling. */
 .grid-products {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 560px) {
+  .grid-products {
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .grid-products { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }
 
 /* ---------------------------------------------------------------------
@@ -371,6 +392,21 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .tile-flags { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .tile-body { padding: 16px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
 .tile-name { font-size: 0.95rem; font-weight: 550; line-height: 1.35; margin: 0; }
+
+@media (max-width: 559px) {
+  /* A square crop suits a two-up grid: 4:5 made each card tall enough
+     that only one fitted on screen. */
+  .tile-media { aspect-ratio: 1 / 1; }
+  .tile-media img { padding: 9%; }
+  .tile-media[data-empty='true'] { font-size: 0.52rem; letter-spacing: 0.12em; }
+  .tile-body { padding: 11px; gap: 5px; }
+  .tile-name { font-size: 0.82rem; line-height: 1.25; }
+  .tile-body .price { font-size: 0.88rem; }
+  .tile-body .price-was { display: none; }   /* no room for both */
+  .tile-body > .muted.tiny { display: none; } /* short description */
+  .tile-flags .badge { font-size: 0.5rem; padding: 3px 7px; }
+  .tile-body .faint.tiny { font-size: 0.68rem; }
+}
 .dim-out { opacity: 0.45; }
 
 /* ---------------------------------------------------------------------
@@ -387,9 +423,9 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 .nav {
   max-width: var(--page); margin-inline: auto;
   display: flex; align-items: center; gap: 14px;
-  /* More padding below than above, so the logo sits lower in the bar
-     rather than hugging the top edge. */
-  padding: 14px var(--gut) 10px;
+  /* More above than below, so the logo sits lower in the bar without
+     overflowing it. */
+  padding: 18px var(--gut) 12px;
 }
 .logo { display: flex; align-items: center; gap: 11px; flex: none; }
 
@@ -399,12 +435,13 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
   height: var(--logo-h, 92px);
   width: auto;
   display: block;
-  /* The wordmark's brush strokes sit high in the file, so a few pixels
-     of offset optically centres it against the nav links beside it. */
-  transform: translateY(var(--logo-drop, 6px));
+  /* No transform here. Nudging with translateY pushed the artwork past
+     the header's own box, so the sticky bar overlapped the page heading
+     beneath it. The nav's asymmetric padding does the same job without
+     leaving the flow. */
   transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
 }
-.logo:hover img { opacity: 0.85; transform: translateY(calc(var(--logo-drop, 6px) - 3px)); }
+.logo:hover img { opacity: 0.85; transform: translateY(-3px); }
 .logo-text { display: none; }
 
 /* Fallback mark, still used in the admin sidebar */
@@ -475,7 +512,7 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
    Hero
    --------------------------------------------------------------------- */
 
-.hero { position: relative; padding-block: clamp(46px, 8vw, 90px) clamp(40px, 6vw, 70px); }
+.hero { position: relative; padding-block: clamp(28px, 8vw, 90px) clamp(28px, 6vw, 70px); }
 
 /* The featured phone, blown up and blurred behind everything. Gives the
    glass something real to refract instead of flat black, and it costs no
@@ -829,7 +866,7 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
 
 .foot { padding: 46px 0 40px; border-top: 1px solid var(--line-soft); margin-top: 64px; }
 .foot-grid { display: grid; gap: 30px; grid-template-columns: 1fr; }
-.foot .logo img { height: 100px; --logo-drop: 0px; }
+.foot .logo img { height: 100px; }
 
 .foot-col h4 {
   font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
