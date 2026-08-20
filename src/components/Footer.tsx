@@ -15,7 +15,7 @@ export default function Footer({ shop }: { shop: ShopSetting }) {
       <div className="wrap foot-grid">
         <div className="foot-col">
           <div className="logo" style={{ marginBottom: 16 }}>
-            <Image src="/logo.png" alt={shop.name} width={900} height={300} />
+            <Image src="/logo.png" alt={shop.name} width={520} height={173} />
           </div>
 
           {shop.footerBlurb && (
