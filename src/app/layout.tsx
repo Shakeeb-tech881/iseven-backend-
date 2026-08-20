@@ -14,7 +14,9 @@ import './globals.css';
  */
 const display = Poppins({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+  // Only the weights the site actually uses. Each extra weight is another
+  // file the browser downloads before text settles.
+  weight: ['600', '700'],
   variable: '--font-display',
   display: 'swap',
 });
@@ -22,6 +24,7 @@ const body = Inter({ subsets: ['latin'], variable: '--font-body', display: 'swap
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 const serif = Playfair_Display({
   subsets: ['latin'],
+  weight: ['500'],
   variable: '--font-serif',
   display: 'swap',
 });
