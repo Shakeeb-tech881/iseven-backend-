@@ -96,7 +96,8 @@ export default function ProductForm({ productId }: { productId?: string }) {
           id: v.id,
           storage: v.storage ?? '', ram: v.ram ?? '', color: v.color ?? '',
           colorHex: v.colorHex ?? '', sku: v.sku ?? '',
-          price: String(v.price), salePrice: v.salePrice != null ? String(v.salePrice) : '',
+          price: v.price != null ? String(v.price) : '',
+          salePrice: v.salePrice != null ? String(v.salePrice) : '',
           stockStatus: v.stockStatus,
         })));
         // Map saved variant ids back to their position in the list.
@@ -146,8 +147,14 @@ export default function ProductForm({ productId }: { productId?: string }) {
     // Validate here so staff get a clear message rather than a 422 blob.
     if (!brandId || !categoryId) { setError('Choose a brand and a category.'); return; }
     for (const [i, v] of variants.entries()) {
-      if (!v.price || Number(v.price) <= 0) {
-        setError(`Option ${i + 1} needs a price.`);
+      // An empty price is allowed — it means "price on request". A zero or
+      // a negative one is a mistake.
+      if (v.price.trim() && Number(v.price) <= 0) {
+        setError(`Option ${i + 1}: enter a real price, or leave it empty for "price on request".`);
+        return;
+      }
+      if (v.salePrice && !v.price.trim()) {
+        setError(`Option ${i + 1}: a sale price needs a regular price to discount from.`);
         return;
       }
       if (v.salePrice && Number(v.salePrice) >= Number(v.price)) {
@@ -186,7 +193,7 @@ export default function ProductForm({ productId }: { productId?: string }) {
         ram: v.ram.trim() || null,
         color: v.color.trim() || null,
         colorHex: v.colorHex.trim() || null,
-        price: Number(v.price),
+        price: v.price.trim() ? Number(v.price) : null,
         salePrice: v.salePrice ? Number(v.salePrice) : null,
         stockStatus: v.stockStatus,
         sortOrder: i,
@@ -347,6 +354,7 @@ export default function ProductForm({ productId }: { productId?: string }) {
             <p className="eyebrow" style={{ margin: 0 }}>Options and prices</p>
             <p className="faint tiny" style={{ margin: '6px 0 0' }}>
               One row per storage and colour combination you actually stock.
+              Leave a price empty and the shop shows &ldquo;Price on request&rdquo;.
             </p>
           </div>
           <button type="button" className="btn btn-sm btn-ghost"
@@ -393,7 +401,8 @@ export default function ProductForm({ productId }: { productId?: string }) {
             </div>
 
             <div className="adm-variant-row">
-              <input className="field price" inputMode="numeric" placeholder="Price (Rs.)"
+              <input className="field price" inputMode="numeric"
+                     placeholder="Price (Rs.) — leave empty to ask"
                      value={v.price} onChange={(e) => patchVariant(i, { price: e.target.value })} />
               <input className="field price" inputMode="numeric" placeholder="Sale price (optional)"
                      value={v.salePrice} onChange={(e) => patchVariant(i, { salePrice: e.target.value })} />
