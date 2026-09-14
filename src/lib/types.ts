@@ -40,7 +40,8 @@ export interface ProductVariant {
   ram: string | null;
   color: string | null;
   colorHex: string | null;
-  price: number;
+  /** Null means "price on request" — listed to gather inquiries. */
+  price: number | null;
   salePrice: number | null;
   stockStatus: StockStatus;
   sortOrder: number;
@@ -56,8 +57,10 @@ export interface ProductCard {
   categorySlug: string;
   condition: Condition;
   badge: Badge | null;
-  fromPrice: number;
-  fromOriginalPrice: number;
+  /** Null when no variant of this product has a price. */
+  fromPrice: number | null;
+  fromOriginalPrice: number | null;
+  hasPrice: boolean;
   hasDiscount: boolean;
   anyInStock: boolean;
   variantCount: number;
