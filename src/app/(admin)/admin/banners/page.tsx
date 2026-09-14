@@ -9,7 +9,7 @@ interface Banner {
   id: string; categoryId: string | null;
   mediaType: 'IMAGE' | 'VIDEO';
   videoUrl: string | null;
-  title: string; subtitle: string | null; cta: string | null;
+  title: string | null; subtitle: string | null; cta: string | null;
   image: string; link: string | null; isActive: boolean; sortOrder: number;
 }
 interface Category { id: string; name: string }
@@ -45,7 +45,7 @@ export default function AdminBanners() {
         categoryId: b.categoryId,
         mediaType: b.mediaType ?? 'IMAGE',
         videoUrl: b.videoUrl,
-        title: b.title, subtitle: b.subtitle ?? '', cta: b.cta ?? '',
+        title: b.title ?? '', subtitle: b.subtitle ?? '', cta: b.cta ?? '',
         image: b.image, link: b.link ?? '', isActive: b.isActive, sortOrder: b.sortOrder,
       });
     } else { setEditing('new'); setForm(blank()); }
@@ -71,6 +71,7 @@ export default function AdminBanners() {
       mediaType: form.mediaType,
       videoUrl: form.mediaType === 'VIDEO' ? form.videoUrl : null,
       image: form.image,
+      title: form.title || null,
       subtitle: form.subtitle || null,
       cta: form.cta || null,
       link: form.link || null,
@@ -196,8 +197,9 @@ export default function AdminBanners() {
 
           <div className="adm-grid2" style={{ marginBottom: 14 }}>
             <div>
-              <label className="adm-label">Title</label>
+              <label className="adm-label">Title (optional)</label>
               <input className="field" value={form.title}
+                     placeholder="Leave empty for artwork with no text"
                      onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
@@ -230,7 +232,7 @@ export default function AdminBanners() {
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn btn-sm btn-ghost" onClick={() => setEditing(null)}>Cancel</button>
-            <button className="btn btn-sm btn-wa" onClick={save} disabled={saving || !form.title}>
+            <button className="btn btn-sm btn-wa" onClick={save} disabled={saving}>
               {saving ? 'Saving…' : 'Save banner'}
             </button>
           </div>
@@ -282,7 +284,9 @@ export default function AdminBanners() {
                       ? `${categories.find((c) => c.id === b.categoryId)?.name ?? 'Category'} page`
                       : 'Homepage'}
                   </span>
-                  <div style={{ fontWeight: 600 }}>{b.title}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    {b.title || <span className="faint">Untitled banner</span>}
+                  </div>
                   {b.subtitle && <div className="faint tiny">{b.subtitle}</div>}
                   {b.link && <div className="faint tiny price">{b.link}</div>}
                 </div>
