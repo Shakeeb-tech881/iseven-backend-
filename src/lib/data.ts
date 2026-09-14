@@ -73,8 +73,14 @@ export async function getProducts(q: CatalogueQuery = {}): Promise<{
 
   switch (q.sort) {
     case 'newest': query = query.order('createdAt', { ascending: false }); break;
-    case 'price_asc': query = query.order('fromPrice', { ascending: true }); break;
-    case 'price_desc': query = query.order('fromPrice', { ascending: false }); break;
+    // Unpriced stock sorts last either way: it is the least useful answer
+    // to "show me the cheapest" or "show me the most expensive".
+    case 'price_asc':
+      query = query.order('fromPrice', { ascending: true, nullsFirst: false });
+      break;
+    case 'price_desc':
+      query = query.order('fromPrice', { ascending: false, nullsFirst: false });
+      break;
     case 'name_asc': query = query.order('name', { ascending: true }); break;
     default:
       query = query.order('popularity', { ascending: false }).order('createdAt', { ascending: false });
