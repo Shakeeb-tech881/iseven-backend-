@@ -8,11 +8,30 @@ import type { ProductVariant } from './types';
 export const formatLKR = (n: number): string =>
   'Rs. ' + n.toLocaleString('en-LK', { maximumFractionDigits: 0 });
 
-export const effectivePrice = (v: Pick<ProductVariant, 'price' | 'salePrice'>): number =>
-  v.salePrice ?? v.price;
+/** What a customer pays, or null when the price is on request. */
+export const effectivePrice = (
+  v: Pick<ProductVariant, 'price' | 'salePrice'>,
+): number | null => v.salePrice ?? v.price;
 
-export const discountPct = (v: Pick<ProductVariant, 'price' | 'salePrice'>): number | null =>
-  v.salePrice ? Math.round(((v.price - v.salePrice) / v.price) * 100) : null;
+export const discountPct = (
+  v: Pick<ProductVariant, 'price' | 'salePrice'>,
+): number | null =>
+  v.salePrice != null && v.price != null
+    ? Math.round(((v.price - v.salePrice) / v.price) * 100)
+    : null;
+
+/**
+ * The one phrase used site-wide for unpriced stock.
+ *
+ * "Price on request" rather than "Call for price" or "Contact us": the
+ * shop already has one call to action, and it is the WhatsApp button
+ * directly beneath.
+ */
+export const PRICE_ON_REQUEST = 'Price on request';
+
+/** Formats a price, or returns the on-request phrase when there is none. */
+export const priceLabel = (n: number | null | undefined): string =>
+  n == null ? PRICE_ON_REQUEST : formatLKR(n);
 
 export const variantLabel = (
   v: Pick<ProductVariant, 'storage' | 'ram' | 'color'>,
