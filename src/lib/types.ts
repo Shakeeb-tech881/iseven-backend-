@@ -83,12 +83,18 @@ export interface Product {
   metaDesc: string | null;
 }
 
+export type BannerMedia = 'IMAGE' | 'VIDEO';
+
 export interface Banner {
   id: string;
   categoryId: string | null;
+  mediaType: BannerMedia;
+  /** Set only when mediaType is VIDEO. */
+  videoUrl: string | null;
   title: string;
   subtitle: string | null;
   cta: string | null;
+  /** For a video banner this is the poster frame. */
   image: string;
   link: string | null;
 }
