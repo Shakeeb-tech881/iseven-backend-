@@ -15,6 +15,9 @@ export default function ImageUpload({
   hint,
   aspect = '1 / 1',
   maxPx = 1400,
+  accept = 'image/*',
+  /** Video cannot be compressed in the browser, so it uploads as-is. */
+  kind = 'image',
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
@@ -22,9 +25,12 @@ export default function ImageUpload({
   hint?: string;
   aspect?: string;
   maxPx?: number;
+  accept?: string;
+  kind?: 'image' | 'video';
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [meta, setMeta] = useState<string>('');
 
   async function handle(files: FileList | null) {
     const file = files?.[0];
@@ -32,8 +38,13 @@ export default function ImageUpload({
     setBusy(true);
     setError('');
     try {
-      const small = await compressImage(file, maxPx);
-      const { url } = await api.upload(small);
+      const payload = kind === 'video' ? file : await compressImage(file, maxPx);
+      const { url, size } = await api.upload(payload);
+
+      // Weight is invisible when you look at a video, so show it at the
+      // moment it can still be acted on.
+      const mb = (size / 1024 / 1024).toFixed(1);
+      setMeta(kind === 'video' ? `${mb} MB` : '');
       onChange(url);
     } catch (e) {
       setError((e as Error).message);
@@ -54,20 +65,32 @@ export default function ImageUpload({
               border: '1px solid var(--line)', background: 'var(--bg)', flex: 'none',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {kind === 'video' ? (
+              <video
+                src={value}
+                autoPlay
+                muted
+                loop
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label className="chip" style={{ cursor: 'pointer' }}>
-              <input type="file" accept="image/*" hidden onChange={(e) => handle(e.target.files)} />
+              <input type="file" accept={accept} hidden onChange={(e) => handle(e.target.files)} />
               {busy ? 'Uploading…' : 'Replace'}
             </label>
+            {meta && <span className="faint tiny code">{meta}</span>}
             <button type="button" className="chip" onClick={() => onChange(null)}>Remove</button>
           </div>
         </div>
       ) : (
         <label className="adm-drop" style={{ aspectRatio: 'auto' }}>
-          <input type="file" accept="image/*" hidden onChange={(e) => handle(e.target.files)} />
+          <input type="file" accept={accept} hidden onChange={(e) => handle(e.target.files)} />
           <span>{busy ? 'Uploading…' : 'Tap to upload'}</span>
           {hint && <span className="tiny">{hint}</span>}
         </label>
