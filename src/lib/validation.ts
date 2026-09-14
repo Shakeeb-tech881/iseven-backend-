@@ -214,19 +214,36 @@ export const staffUpdateSchema = z.object({
 /** Settings live as jsonb, so the shape is validated per key. */
 export const settingKeys = ['hero', 'shop', 'nav'] as const;
 
-export const bannerSchema = z.object({
-  /** Null = homepage. Set = that category's listing page. */
-  categoryId: z.string().nullish(),
-  title: z.string().trim().min(1, 'Give the banner a title').max(120),
-  subtitle: z.string().trim().max(200).nullish(),
-  cta: z.string().trim().max(40).nullish(),
-  image: z.string().url('Upload an image first'),
-  link: z.string().trim().max(300).nullish(),
-  isActive: z.boolean().default(true),
-  startsAt: z.string().datetime().nullish(),
-  endsAt: z.string().datetime().nullish(),
-  sortOrder: z.number().int().min(0).default(0),
-});
+export const bannerSchema = z
+  .object({
+    /** Null = homepage. Set = that category's listing page. */
+    categoryId: z.string().nullish(),
+    mediaType: z.enum(['IMAGE', 'VIDEO']).default('IMAGE'),
+    title: z.string().trim().min(1, 'Give the banner a title').max(120),
+    subtitle: z.string().trim().max(200).nullish(),
+    cta: z.string().trim().max(40).nullish(),
+    /**
+     * Still image. Required for IMAGE banners, and kept for VIDEO ones as
+     * the poster — a clip with no fallback frame is a black rectangle on
+     * any device that blocks autoplay.
+     */
+    image: z.string().url('Upload an image first'),
+    videoUrl: z.string().url().nullish(),
+    link: z.string().trim().max(300).nullish(),
+    isActive: z.boolean().default(true),
+    startsAt: z.string().datetime().nullish(),
+    endsAt: z.string().datetime().nullish(),
+    sortOrder: z.number().int().min(0).default(0),
+  })
+  .superRefine((data, ctx) => {
+    if (data.mediaType === 'VIDEO' && !data.videoUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['videoUrl'],
+        message: 'Upload a video clip, or switch this banner back to Image.',
+      });
+    }
+  });
 
 export const planSchema = z.object({
   bankName: z.string().trim().min(1, 'Bank name is required').max(80),
