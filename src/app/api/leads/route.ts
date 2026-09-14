@@ -71,7 +71,7 @@ export const POST = route(async (req: Request) => {
       productName: product.name,
       variantLabel: variantLabel(variant),
       price: effectivePrice({
-        price: Number(variant.price),
+        price: variant.price === null ? null : Number(variant.price),
         salePrice: variant.salePrice === null ? null : Number(variant.salePrice),
       }),
       message: body.message ?? null,
