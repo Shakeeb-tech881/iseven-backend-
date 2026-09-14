@@ -7,8 +7,17 @@ import { randomToken } from '@/lib/password';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-const MAX_BYTES = 3 * 1024 * 1024; // 3MB — compress in the browser first
+const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+const ALLOWED_VIDEO = ['video/mp4', 'video/webm'];
+const ALLOWED = [...ALLOWED_IMAGE, ...ALLOWED_VIDEO];
+
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;   // compressed in the browser first
+/**
+ * Video cannot be compressed in the browser, so this cap is the only
+ * thing standing between a 40MB phone recording and every visitor's
+ * mobile data. 12MB is generous for an 8-second 720p clip.
+ */
+const MAX_VIDEO_BYTES = 12 * 1024 * 1024;
 
 /**
  * POST /api/admin/upload  (multipart/form-data, field name "file")
@@ -25,14 +34,23 @@ export const POST = route(async (req: Request) => {
 
   if (!(file instanceof File)) throw BadRequest('No file uploaded');
   if (!ALLOWED.includes(file.type)) {
-    throw BadRequest('Only JPEG, PNG, WebP and AVIF images are allowed');
+    throw BadRequest('Allowed files: JPEG, PNG, WebP, AVIF images, or MP4 and WebM video');
   }
-  if (file.size > MAX_BYTES) {
-    throw BadRequest('Image must be under 3MB. Compress it before uploading.');
+
+  const isVideo = ALLOWED_VIDEO.includes(file.type);
+  const limit = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+
+  if (file.size > limit) {
+    throw BadRequest(
+      isVideo
+        ? `Video must be under ${MAX_VIDEO_BYTES / 1024 / 1024}MB. Export at 720p and around 8 seconds.`
+        : 'Image must be under 3MB. Compress it before uploading.',
+    );
   }
 
   const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
-  const path = `products/${new Date().getFullYear()}/${randomToken(12)}.${ext}`;
+  const folder = isVideo ? 'video' : 'products';
+  const path = `${folder}/${new Date().getFullYear()}/${randomToken(12)}.${ext}`;
 
   const { error } = await db.storage
     .from(env.SUPABASE_STORAGE_BUCKET)
