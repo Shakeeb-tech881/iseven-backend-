@@ -36,6 +36,18 @@ export default function BannerSlider({
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   const count = banners.length;
+
+  /**
+   * Only the active slide and the one after it get a `src`.
+   *
+   * Previously the first clip used preload="auto", so the browser pulled
+   * several megabytes down before the page settled and visitors sat on the
+   * poster frame. A banner is decoration — it must never hold up the shop.
+   */
+  const shouldLoad = useCallback(
+    (i: number) => i === index || i === (index + 1) % Math.max(count, 1),
+    [index, count],
+  );
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
   const next = useCallback(() => setIndex((i) => (i + 1) % count), [count]);
 
@@ -121,33 +133,38 @@ export default function BannerSlider({
           const media = isVideo ? (
             <video
               ref={(el) => { videoRefs.current[i] = el; }}
-              src={b.videoUrl ?? undefined}
+              src={shouldLoad(i) ? b.videoUrl ?? undefined : undefined}
               poster={b.image}
               muted
               playsInline
-              preload={i === 0 ? 'auto' : 'metadata'}
+              // Metadata only: enough to know the duration, not the whole file.
+              preload="metadata"
               // No `loop`: the slide advances when the clip ends.
-              aria-label={b.title}
+              aria-label={b.title ?? 'Promotion'}
             />
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={b.image} alt={b.title} loading={i === 0 ? 'eager' : 'lazy'} />
+            <img src={b.image} alt={b.title ?? ''} loading={i === 0 ? 'eager' : 'lazy'} />
           );
 
           const inner = (
             <>
               {media}
-              <div className="slider-copy">
-                <div className="wrap">
-                  <h2 className="display slider-title">{b.title}</h2>
-                  {b.subtitle && <p className="slider-sub">{b.subtitle}</p>}
-                  {b.cta && (
-                    <span className="btn btn-wa" style={{ marginTop: 20 }}>
-                      {b.cta} <ArrowIcon />
-                    </span>
-                  )}
+              {/* A banner with no words at all should be clean artwork, not
+                  an empty gradient sitting over the bottom third. */}
+              {(b.title || b.subtitle || b.cta) && (
+                <div className="slider-copy">
+                  <div className="wrap">
+                    {b.title && <h2 className="display slider-title">{b.title}</h2>}
+                    {b.subtitle && <p className="slider-sub">{b.subtitle}</p>}
+                    {b.cta && (
+                      <span className="btn btn-wa" style={{ marginTop: 20 }}>
+                        {b.cta} <ArrowIcon />
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           );
 
