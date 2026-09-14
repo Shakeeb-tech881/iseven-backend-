@@ -15,7 +15,7 @@ interface Row {
   condition: string;
   brand: { name: string } | null;
   category: { name: string } | null;
-  variants: { id: string; price: string | number; salePrice: string | number | null; stockStatus: string }[];
+  variants: { id: string; price: string | number | null; salePrice: string | number | null; stockStatus: string }[];
 }
 
 type Filter = 'all' | 'live' | 'hidden' | 'sold_out';
@@ -42,8 +42,12 @@ export default function AdminProducts() {
   }, [search, load]);
 
   function lowest(v: Row['variants']) {
-    if (!v.length) return null;
-    return Math.min(...v.map((x) => Number(x.salePrice ?? x.price)));
+    const priced = v
+      .map((x) => x.salePrice ?? x.price)
+      .filter((n) => n !== null && n !== undefined)
+      .map(Number)
+      .filter((n) => Number.isFinite(n));
+    return priced.length ? Math.min(...priced) : null;
   }
 
   const allSoldOut = (r: Row) =>
@@ -179,7 +183,11 @@ export default function AdminProducts() {
                         <div className="faint tiny code">{r.slug}</div>
                       </td>
                       <td className="muted">{r.brand?.name ?? '—'}</td>
-                      <td className="price">{price !== null ? formatLKR(price) : '—'}</td>
+                      <td className="price">
+                        {price !== null ? formatLKR(price) : (
+                          <span className="faint tiny">On request</span>
+                        )}
+                      </td>
                       <td className="muted">{r.variants.length}</td>
                       <td>
                         {!r.isActive ? (
