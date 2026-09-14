@@ -5,15 +5,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Banner } from '@/lib/types';
 import { ArrowIcon } from './Icons';
 
+/** Nothing holds the rotation longer than this, however long the clip is. */
+const MAX_VIDEO_HOLD = 15000;
+
 /**
- * Full-bleed banner slideshow.
+ * Full-bleed banner slideshow, images and video mixed in one rotation.
  *
- * Advances every 5 seconds, but pauses on hover, on focus, and when the
- * tab is hidden — a carousel that keeps moving while someone is reading
- * a slide or tabbing through its link is hostile.
+ * Image slides advance after `interval`. Video slides hold until the clip
+ * ends, so a customer never loses the second half of a clip to a timer.
  *
- * Honours prefers-reduced-motion by not auto-advancing at all. The
- * arrows and dots still work, so nothing becomes unreachable.
+ * It pauses on hover, on keyboard focus, and when the browser tab is
+ * hidden — a carousel that moves while someone is reading a slide or
+ * tabbing through its link is hostile.
+ *
+ * Honours prefers-reduced-motion by not auto-advancing at all and showing
+ * the poster frame instead of playing video. The arrows and dots still
+ * work, so nothing becomes unreachable.
  */
 export default function BannerSlider({
   banners,
@@ -24,18 +31,21 @@ export default function BannerSlider({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [reduced, setReduced] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   const count = banners.length;
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
+  const next = useCallback(() => setIndex((i) => (i + 1) % count), [count]);
 
   useEffect(() => {
-    if (count < 2 || paused) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    timer.current = setInterval(() => setIndex((i) => (i + 1) % count), interval);
-    return () => { if (timer.current) clearInterval(timer.current); };
-  }, [count, paused, interval]);
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // Stop burning cycles and skipping slides while the tab is in the background.
   useEffect(() => {
@@ -43,6 +53,53 @@ export default function BannerSlider({
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
+
+  /**
+   * Only the active slide plays. A video running off-screen costs battery
+   * and mobile data for something nobody can see.
+   */
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+      if (i === index && !paused && !reduced) {
+        video.currentTime = 0;
+        // Autoplay can be refused; the poster stays visible if so.
+        void video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    });
+  }, [index, paused, reduced]);
+
+  /**
+   * Advance timer.
+   *
+   * A video slide waits for its `ended` event rather than a fixed delay,
+   * but still carries a ceiling: without one, a long upload or a clip that
+   * never fires `ended` (autoplay refused, decode error) would stall the
+   * rotation for good.
+   */
+  useEffect(() => {
+    if (count < 2 || paused || reduced) return;
+
+    const current = banners[index];
+    const video = videoRefs.current[index];
+    const isPlayingVideo =
+      current?.mediaType === 'VIDEO' && current.videoUrl && video;
+
+    if (isPlayingVideo) {
+      const onEnded = () => next();
+      video.addEventListener('ended', onEnded);
+      timer.current = setTimeout(next, MAX_VIDEO_HOLD);
+      return () => {
+        video.removeEventListener('ended', onEnded);
+        if (timer.current) clearTimeout(timer.current);
+      };
+    }
+
+    timer.current = setTimeout(next, interval);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [index, paused, reduced, count, interval, banners, next]);
 
   if (count === 0) return null;
 
@@ -59,10 +116,27 @@ export default function BannerSlider({
       <div className="slider-track">
         {banners.map((b, i) => {
           const active = i === index;
+          const isVideo = b.mediaType === 'VIDEO' && Boolean(b.videoUrl);
+
+          const media = isVideo ? (
+            <video
+              ref={(el) => { videoRefs.current[i] = el; }}
+              src={b.videoUrl ?? undefined}
+              poster={b.image}
+              muted
+              playsInline
+              preload={i === 0 ? 'auto' : 'metadata'}
+              // No `loop`: the slide advances when the clip ends.
+              aria-label={b.title}
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={b.image} alt={b.title} loading={i === 0 ? 'eager' : 'lazy'} />
+          );
+
           const inner = (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={b.image} alt={b.title} loading={i === 0 ? 'eager' : 'lazy'} />
+              {media}
               <div className="slider-copy">
                 <div className="wrap">
                   <h2 className="display slider-title">{b.title}</h2>
