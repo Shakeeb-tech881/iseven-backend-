@@ -7,6 +7,8 @@ import Confirm from '@/components/admin/Confirm';
 
 interface Banner {
   id: string; categoryId: string | null;
+  mediaType: 'IMAGE' | 'VIDEO';
+  videoUrl: string | null;
   title: string; subtitle: string | null; cta: string | null;
   image: string; link: string | null; isActive: boolean; sortOrder: number;
 }
@@ -14,6 +16,8 @@ interface Category { id: string; name: string }
 
 const blank = () => ({
   categoryId: null as string | null,
+  mediaType: 'IMAGE' as 'IMAGE' | 'VIDEO',
+  videoUrl: null as string | null,
   title: '', subtitle: '', cta: '', image: null as string | null,
   link: '', isActive: true, sortOrder: 0,
 });
@@ -39,6 +43,8 @@ export default function AdminBanners() {
       setEditing(b.id);
       setForm({
         categoryId: b.categoryId,
+        mediaType: b.mediaType ?? 'IMAGE',
+        videoUrl: b.videoUrl,
         title: b.title, subtitle: b.subtitle ?? '', cta: b.cta ?? '',
         image: b.image, link: b.link ?? '', isActive: b.isActive, sortOrder: b.sortOrder,
       });
@@ -46,11 +52,24 @@ export default function AdminBanners() {
   }
 
   async function save() {
-    if (!form.image) { setError('Upload a banner image first.'); return; }
+    if (form.mediaType === 'VIDEO' && !form.videoUrl) {
+      setError('Upload a video clip, or switch this banner back to Image.');
+      return;
+    }
+    if (!form.image) {
+      setError(
+        form.mediaType === 'VIDEO'
+          ? 'Upload a poster frame. Phones in Low Power Mode block autoplay and would show a black rectangle without one.'
+          : 'Upload a banner image first.',
+      );
+      return;
+    }
     setSaving(true); setError('');
     const payload = {
       ...form,
       categoryId: form.categoryId,
+      mediaType: form.mediaType,
+      videoUrl: form.mediaType === 'VIDEO' ? form.videoUrl : null,
       image: form.image,
       subtitle: form.subtitle || null,
       cta: form.cta || null,
@@ -115,13 +134,65 @@ export default function AdminBanners() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 14, maxWidth: 520 }}>
-            <ImageUpload
-              label="Banner image" value={form.image} aspect="21 / 9" maxPx={2400}
-              hint="Full width — around 2400 × 1000. Dark images keep the text readable."
-              onChange={(image) => setForm({ ...form, image })}
-            />
+          <label className="adm-label">Media</label>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+            <button
+              className="chip"
+              data-on={form.mediaType === 'IMAGE'}
+              onClick={() => setForm({ ...form, mediaType: 'IMAGE' })}
+            >
+              Image
+            </button>
+            <button
+              className="chip"
+              data-on={form.mediaType === 'VIDEO'}
+              onClick={() => setForm({ ...form, mediaType: 'VIDEO' })}
+            >
+              Video
+            </button>
           </div>
+
+          {form.mediaType === 'IMAGE' ? (
+            <div style={{ marginBottom: 14, maxWidth: 520 }}>
+              <ImageUpload
+                label="Banner image" value={form.image} aspect="21 / 9" maxPx={2400}
+                hint="Full width — around 2400 × 1000. Dark images keep the text readable."
+                onChange={(image) => setForm({ ...form, image })}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="adm-grid2" style={{ marginBottom: 14 }}>
+                <ImageUpload
+                  label="Video clip"
+                  value={form.videoUrl}
+                  aspect="21 / 9"
+                  kind="video"
+                  accept="video/mp4,video/webm"
+                  hint="MP4 or WebM, 720p, around 8 seconds"
+                  onChange={(videoUrl) => setForm({ ...form, videoUrl })}
+                />
+                <ImageUpload
+                  label="Poster frame"
+                  value={form.image}
+                  aspect="21 / 9"
+                  maxPx={2400}
+                  hint="Shown before the clip loads, and to anyone whose phone blocks autoplay"
+                  onChange={(image) => setForm({ ...form, image })}
+                />
+              </div>
+
+              <div className="note note-bad" style={{
+                marginBottom: 16,
+                background: 'rgba(255,190,60,.1)',
+                borderColor: 'rgba(255,190,60,.4)',
+                color: '#ffd894',
+              }}>
+                Keep clips under 12&nbsp;MB and around 8 seconds. The slide holds until the
+                clip finishes, so a long video keeps customers from reaching the next banner.
+              </div>
+            </>
+          )}
 
           <div className="adm-grid2" style={{ marginBottom: 14 }}>
             <div>
@@ -179,13 +250,34 @@ export default function AdminBanners() {
           {rows.map((b) => (
             <div key={b.id} className="adm-block solid" style={{ padding: 12 }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={b.image} alt="" style={{
-                  width: 140, aspectRatio: '21/9', objectFit: 'cover',
-                  borderRadius: 10, border: '1px solid var(--line)',
-                }} />
+                {b.mediaType === 'VIDEO' && b.videoUrl ? (
+                  <video
+                    src={b.videoUrl}
+                    poster={b.image}
+                    autoPlay muted loop playsInline
+                    style={{
+                      width: 140, aspectRatio: '21/9', objectFit: 'cover',
+                      borderRadius: 10, border: '1px solid var(--line)',
+                    }}
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={b.image} alt="" style={{
+                    width: 140, aspectRatio: '21/9', objectFit: 'cover',
+                    borderRadius: 10, border: '1px solid var(--line)',
+                  }} />
+                )}
                 <div style={{ flex: 1, minWidth: 160 }}>
-                  <span className="badge" style={{ marginBottom: 6 }}>
+                  <span
+                    className="badge"
+                    style={{
+                      marginBottom: 6,
+                      ...(b.mediaType === 'VIDEO'
+                        ? { background: 'var(--acid)', borderColor: 'var(--acid)', color: 'var(--acid-ink)', fontWeight: 600 }
+                        : {}),
+                    }}
+                  >
+                    {b.mediaType === 'VIDEO' ? 'Video · ' : ''}
                     {b.categoryId
                       ? `${categories.find((c) => c.id === b.categoryId)?.name ?? 'Category'} page`
                       : 'Homepage'}
