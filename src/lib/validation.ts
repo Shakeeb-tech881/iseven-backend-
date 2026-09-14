@@ -101,7 +101,10 @@ const variantInputSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex colour like #2b2b2b')
     .nullish(),
-  price: z.number().positive('Price must be greater than zero'),
+  /* Null = price on request. Zero is rejected on purpose: it usually
+     means someone tabbed past the field, and a Rs. 0 phone on a live
+     shop is worse than no figure at all. */
+  price: z.number().positive('Price must be greater than zero').nullish(),
   salePrice: z.number().positive().nullish(),
   stockStatus: z.enum(['IN_STOCK', 'PRE_ORDER', 'SOLD_OUT']).default('IN_STOCK'),
   sortOrder: z.number().int().min(0).default(0),
@@ -144,7 +147,14 @@ export const productCreateSchema = z
   })
   .superRefine((data, ctx) => {
     data.variants.forEach((v, i) => {
-      if (v.salePrice != null && v.salePrice >= v.price) {
+      if (v.salePrice != null && v.price == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['variants', i, 'salePrice'],
+          message: 'A sale price needs a regular price to be a discount from.',
+        });
+      }
+      if (v.salePrice != null && v.price != null && v.salePrice >= v.price) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['variants', i, 'salePrice'],
