@@ -42,8 +42,10 @@ export const POST = route(async (req: Request) => {
 
   if (!variant || !product?.isActive) throw NotFound('Product not found');
 
+  // Null is stored as null, never 0 — a zero would quietly corrupt the
+  // demand figures on the dashboard.
   const price = effectivePrice({
-    price: Number(variant.price),
+    price: variant.price === null ? null : Number(variant.price),
     salePrice: variant.salePrice === null ? null : Number(variant.salePrice),
   });
 
@@ -68,7 +70,7 @@ export const POST = route(async (req: Request) => {
         storage: variant.storage,
         ram: variant.ram,
         color: variant.color,
-        price: Number(variant.price),
+        price: variant.price === null ? null : Number(variant.price),
         salePrice: variant.salePrice === null ? null : Number(variant.salePrice),
       },
     }),
