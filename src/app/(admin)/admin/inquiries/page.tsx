@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/admin-client';
-import { formatLKR } from '@/lib/format';
+import { priceLabel } from '@/lib/format';
 
 interface Data {
   total: number;
-  recent: { id: string; productName: string; variantLabel: string | null; price: number; source: string | null; createdAt: string }[];
+  recent: { id: string; productName: string; variantLabel: string | null; price: number | null; source: string | null; createdAt: string }[];
   topProducts: { name: string; count: number }[];
   bySource: { source: string; count: number }[];
   byDay: { day: string; count: number }[];
@@ -113,7 +113,7 @@ export default function AdminInquiries() {
                       <td className="faint tiny">{new Date(r.createdAt).toLocaleString('en-LK')}</td>
                       <td>{r.productName}</td>
                       <td className="muted tiny">{r.variantLabel ?? '—'}</td>
-                      <td className="price">{formatLKR(r.price)}</td>
+                      <td className="price">{priceLabel(r.price)}</td>
                     </tr>
                   ))}
                 </tbody>
