@@ -219,7 +219,9 @@ export const bannerSchema = z
     /** Null = homepage. Set = that category's listing page. */
     categoryId: z.string().nullish(),
     mediaType: z.enum(['IMAGE', 'VIDEO']).default('IMAGE'),
-    title: z.string().trim().min(1, 'Give the banner a title').max(120),
+    /* Optional. A banner is often just artwork — forcing a headline means
+       staff invent one, and invented text is worse than none. */
+    title: z.string().trim().max(120).nullish(),
     subtitle: z.string().trim().max(200).nullish(),
     cta: z.string().trim().max(40).nullish(),
     /**
