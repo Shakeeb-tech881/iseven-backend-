@@ -101,7 +101,7 @@ export const mapBanner = (r: any): Banner => ({
   categoryId: r.categoryId ?? null,
   mediaType: r.mediaType === 'VIDEO' ? 'VIDEO' : 'IMAGE',
   videoUrl: r.videoUrl ?? null,
-  title: r.title,
+  title: r.title ?? null,
   subtitle: r.subtitle ?? null,
   cta: r.cta ?? null,
   image: r.image,
