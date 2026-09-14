@@ -91,7 +91,7 @@ export interface Banner {
   mediaType: BannerMedia;
   /** Set only when mediaType is VIDEO. */
   videoUrl: string | null;
-  title: string;
+  title: string | null;
   subtitle: string | null;
   cta: string | null;
   /** For a video banner this is the poster frame. */
