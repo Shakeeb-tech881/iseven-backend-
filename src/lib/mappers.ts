@@ -99,6 +99,8 @@ export const mapProduct = (r: any): Product => ({
 export const mapBanner = (r: any): Banner => ({
   id: r.id,
   categoryId: r.categoryId ?? null,
+  mediaType: r.mediaType === 'VIDEO' ? 'VIDEO' : 'IMAGE',
+  videoUrl: r.videoUrl ?? null,
   title: r.title,
   subtitle: r.subtitle ?? null,
   cta: r.cta ?? null,
