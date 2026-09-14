@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, getToken } from '@/lib/admin-client';
 import Confirm from '@/components/admin/Confirm';
-import { formatLKR } from '@/lib/format';
+import { priceLabel } from '@/lib/format';
 
 interface Lead {
   id: string;
@@ -14,7 +14,7 @@ interface Lead {
   city: string | null;
   productName: string;
   variantLabel: string | null;
-  price: number;
+  price: number | null;
   message: string | null;
   status: 'NEW' | 'CONTACTED' | 'QUOTED' | 'SOLD' | 'LOST';
   notes: string | null;
@@ -130,7 +130,7 @@ export default function AdminLeads() {
                   </a>
                   <div className="faint tiny" style={{ marginTop: 4 }}>
                     {l.productName}
-                    {l.variantLabel ? ` · ${l.variantLabel}` : ''} · {formatLKR(l.price)}
+                    {l.variantLabel ? ` · ${l.variantLabel}` : ''} · {priceLabel(l.price)}
                   </div>
                   {l.city && <div className="faint tiny">{l.city}</div>}
                 </div>
