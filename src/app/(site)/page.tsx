@@ -61,12 +61,22 @@ export default async function HomePage() {
               </p>
             )}
 
-            <div className="hero-cta rise-in" style={{ ["--d" as string]: "0.22s" }}>
-              <Link href="/products" className="btn">
-                Browse the stock <ArrowIcon />
-              </Link>
-              <Link href="/products?condition=USED" className="btn">Pre-owned</Link>
-            </div>
+            {/* Both buttons come from /admin/hero. Leaving a label empty
+                hides that button entirely. */}
+            {(hero_.primaryLabel || hero_.secondaryLabel) && (
+              <div className="hero-cta rise-in" style={{ ["--d" as string]: "0.22s" }}>
+                {hero_.primaryLabel && (
+                  <Link href={hero_.primaryHref || '/products'} className="btn btn-solid">
+                    {hero_.primaryLabel} <ArrowIcon />
+                  </Link>
+                )}
+                {hero_.secondaryLabel && (
+                  <Link href={hero_.secondaryHref || '/products'} className="btn">
+                    {hero_.secondaryLabel}
+                  </Link>
+                )}
+              </div>
+            )}
 
             {hero_.statsEnabled && (
               <div className="stats rise-in" style={{ ["--d" as string]: "0.3s" }}>
