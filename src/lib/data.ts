@@ -163,7 +163,8 @@ export async function getBanners(categorySlug?: string | null): Promise<Banner[]
   }
 
   let query = db
-    .from('Banner').select('id, categoryId, title, subtitle, cta, image, link')
+    .from('Banner')
+    .select('id, categoryId, mediaType, videoUrl, title, subtitle, cta, image, link')
     .eq('isActive', true)
     .or(`startsAt.is.null,startsAt.lte.${now}`)
     .or(`endsAt.is.null,endsAt.gte.${now}`)
