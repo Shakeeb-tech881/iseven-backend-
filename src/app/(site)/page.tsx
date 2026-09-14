@@ -3,7 +3,7 @@ import { getBanners, getBrandsWithCounts, getHero, getProducts, getSpotlight, sa
 import ProductTile from '@/components/ProductTile';
 import BannerSlider from '@/components/BannerSlider';
 import { ArrowIcon, ShieldIcon } from '@/components/Icons';
-import { formatLKR } from '@/lib/format';
+import { formatLKR, PRICE_ON_REQUEST } from '@/lib/format';
 
 // No ISR on the homepage. Staff change the hero or feature a different
 // phone and expect to see it on the next reload — a 60 second cache made
@@ -100,9 +100,17 @@ export default async function HomePage() {
                 </div>
                 <h2 className="display h3" style={{ marginTop: 16 }}>{hero.name}</h2>
                 <div className="between" style={{ marginTop: 8 }}>
-                  <span className="price price-lg">{formatLKR(hero.fromPrice)}</span>
-                  {hero.hasDiscount && (
-                    <span className="price-was">{formatLKR(hero.fromOriginalPrice)}</span>
+                  {hero.fromPrice != null ? (
+                    <>
+                      <span className="price price-lg">{formatLKR(hero.fromPrice)}</span>
+                      {hero.hasDiscount && hero.fromOriginalPrice != null && (
+                        <span className="price-was">{formatLKR(hero.fromOriginalPrice)}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="price" style={{ color: 'var(--acid)' }}>
+                      {PRICE_ON_REQUEST}
+                    </span>
                   )}
                 </div>
               </Link>
