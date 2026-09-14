@@ -45,7 +45,7 @@ export default function BannerSlider({
    * poster frame. A banner is decoration — it must never hold up the shop.
    */
   const shouldLoad = useCallback(
-    (i: number) => i === index || i === (index + 1) % Math.max(count, 1),
+    (i: number) => i === 0 || i === index || i === (index + 1) % Math.max(count, 1),
     [index, count],
   );
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
@@ -137,8 +137,13 @@ export default function BannerSlider({
               poster={b.image}
               muted
               playsInline
-              // Metadata only: enough to know the duration, not the whole file.
-              preload="metadata"
+              /* The browser starts the first clip itself, without waiting for
+                 React to mount and call play(). Later slides are started by
+                 the effect below when they become active. */
+              autoPlay={i === 0}
+              /* Buffer the first clip fully so it plays the moment the page
+                 appears; leave the rest until they are nearly up. */
+              preload={i === 0 ? 'auto' : 'none'}
               // No `loop`: the slide advances when the clip ends.
               aria-label={b.title ?? 'Promotion'}
             />
