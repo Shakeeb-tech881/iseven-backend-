@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
-import { formatLKR, effectivePrice, discountPct, variantLabel } from '@/lib/format';
+import { formatLKR, effectivePrice, discountPct, variantLabel, PRICE_ON_REQUEST } from '@/lib/format';
 import type { InstallmentPlan, Product, ProductVariant } from '@/lib/types';
 import WhatsAppButton from './WhatsAppButton';
 import { ShieldIcon } from './Icons';
@@ -95,7 +95,9 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
   const price = effectivePrice(selected);
   const off = discountPct(selected);
   const soldOut = selected.stockStatus === 'SOLD_OUT';
-  const eligible = plans.filter((p) => price >= p.minAmount);
+  // No price means no instalment figure to show — a monthly payment
+  // calculated from nothing would be fiction.
+  const eligible = price == null ? [] : plans.filter((p) => price >= p.minAmount);
 
   return (
     <>
@@ -167,12 +169,20 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
             {product.shortDesc && <p className="muted" style={{ margin: '0 0 18px' }}>{product.shortDesc}</p>}
 
             <div className="row" style={{ gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-              <span className="price price-lg">{formatLKR(price)}</span>
-              {selected.salePrice !== null && (
+              {price != null ? (
                 <>
-                  <span className="price-was">{formatLKR(selected.price)}</span>
-                  <span className="badge badge-sale">Save {off}%</span>
+                  <span className="price price-lg">{formatLKR(price)}</span>
+                  {selected.salePrice !== null && selected.price != null && (
+                    <>
+                      <span className="price-was">{formatLKR(selected.price)}</span>
+                      <span className="badge badge-sale">Save {off}%</span>
+                    </>
+                  )}
                 </>
+              ) : (
+                <span className="price price-lg" style={{ color: 'var(--acid)' }}>
+                  {PRICE_ON_REQUEST}
+                </span>
               )}
             </div>
 
@@ -315,7 +325,7 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
             <div className="glass" style={{ padding: 22, marginTop: 16 }}>
               <p className="eyebrow">Bank instalments</p>
               {eligible.map((p) => {
-                const total = price * (1 + p.interestPct / 100);
+                const total = (price ?? 0) * (1 + p.interestPct / 100);
                 return (
                   <div key={p.id} className="emi-row">
                     <div>
@@ -339,7 +349,12 @@ export default function ProductDetail({ product, plans, whatsappLinks }: Props) 
       {/* ---------- signature: floating action bar (mobile) ---------- */}
       <div className="actionbar glass">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="price" style={{ fontSize: '1.05rem' }}>{formatLKR(price)}</div>
+          <div
+            className="price"
+            style={{ fontSize: price != null ? '1.05rem' : '0.9rem', color: price != null ? undefined : 'var(--acid)' }}
+          >
+            {price != null ? formatLKR(price) : PRICE_ON_REQUEST}
+          </div>
           <div className="faint tiny" style={{
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
