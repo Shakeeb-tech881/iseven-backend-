@@ -11,11 +11,15 @@ export function whatsappUrl(opts: {
   productSlug: string;
   variant: Pick<ProductVariant, 'storage' | 'ram' | 'color' | 'price' | 'salePrice'>;
 }): string {
+  const price = effectivePrice(opts.variant);
+
   const lines = [
     `Hi iSeven, I'm interested in:`,
     ``,
     `${opts.productName} — ${variantLabel(opts.variant)}`,
-    formatLKR(effectivePrice(opts.variant)),
+    // With no price set, ask for one rather than sending a blank line or
+    // a misleading "Rs. 0".
+    price != null ? formatLKR(price) : `Could you tell me the price?`,
     ``,
     `${env.NEXT_PUBLIC_SITE_URL}/product/${opts.productSlug}`,
   ];
