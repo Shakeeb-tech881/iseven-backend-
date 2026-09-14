@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatLKR } from '@/lib/format';
+import { formatLKR, PRICE_ON_REQUEST } from '@/lib/format';
 import type { ProductCard } from '@/lib/types';
 
 /**
@@ -8,9 +8,10 @@ import type { ProductCard } from '@/lib/types';
  * short description, one variant, or be entirely sold out.
  */
 export default function ProductTile({ p }: { p: ProductCard }) {
-  const off = p.hasDiscount
-    ? Math.round(((p.fromOriginalPrice - p.fromPrice) / p.fromOriginalPrice) * 100)
-    : 0;
+  const off =
+    p.hasDiscount && p.fromOriginalPrice != null && p.fromPrice != null
+      ? Math.round(((p.fromOriginalPrice - p.fromPrice) / p.fromOriginalPrice) * 100)
+      : 0;
 
   return (
     <Link href={`/product/${p.slug}`} className="glass glass-hover tile">
@@ -42,11 +43,25 @@ export default function ProductTile({ p }: { p: ProductCard }) {
 
         <div style={{ marginTop: 'auto', paddingTop: 10 }}>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <span className="price">{formatLKR(p.fromPrice)}</span>
-            {p.hasDiscount && <span className="price-was">{formatLKR(p.fromOriginalPrice)}</span>}
+            {p.fromPrice != null ? (
+              <>
+                <span className="price">{formatLKR(p.fromPrice)}</span>
+                {p.hasDiscount && p.fromOriginalPrice != null && (
+                  <span className="price-was">{formatLKR(p.fromOriginalPrice)}</span>
+                )}
+              </>
+            ) : (
+              /* Set in the accent so it reads as an invitation rather than
+                 a missing field. */
+              <span className="price" style={{ color: 'var(--acid)', fontSize: '0.9rem' }}>
+                {PRICE_ON_REQUEST}
+              </span>
+            )}
           </div>
           <p className="faint tiny" style={{ margin: '4px 0 0' }}>
-            {p.variantCount > 1 ? `From · ${p.variantCount} options` : 'One option'}
+            {p.variantCount > 1
+              ? `${p.fromPrice != null ? 'From · ' : ''}${p.variantCount} options`
+              : 'One option'}
           </p>
         </div>
       </div>
