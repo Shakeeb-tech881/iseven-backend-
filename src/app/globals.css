@@ -795,8 +795,17 @@ input[type='checkbox'] { accent-color: var(--acid); width: 16px; height: 16px; }
   transition: transform 6s linear;
 }
 .slide[data-on='true'] img { transform: scale(1); }
-/* Video carries its own motion — the slow zoom on top would be too much. */
-.slide video { transform: none; transition: none; }
+
+/* Video carries its own motion — the slow zoom on top would be too much.
+   `contain` rather than `cover`: banner clips are exported at all sorts of
+   shapes, and cropping one to fill a 21:9 frame cuts the ends off whatever
+   it was showing. Letterboxing is the lesser cost. */
+.slide video {
+  transform: none;
+  transition: none;
+  object-fit: contain;
+  background: #000;
+}
 
 .slide-link { display: block; height: 100%; }
 
