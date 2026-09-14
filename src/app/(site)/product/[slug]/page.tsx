@@ -63,10 +63,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ]),
   );
 
-  const cheapest = Math.min(...product.variants.map(effectivePrice));
+  const prices = product.variants
+    .map(effectivePrice)
+    .filter((n): n is number => n != null);
   const inStock = product.variants.some((v) => v.stockStatus === 'IN_STOCK');
 
-  // Product schema so the price shows in Google results.
+  /**
+   * Product schema so the price shows in Google results.
+   *
+   * When nothing is priced, the offers block is omitted entirely rather
+   * than sent with a zero. Google treats a Rs. 0 offer as a real one, and
+   * a shop advertising free iPhones in search results is worse than a
+   * listing with no price at all.
+   */
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -75,17 +84,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     image: product.images.map((i) => i.url),
     sku: product.variants[0]?.sku ?? undefined,
     brand: { '@type': 'Brand', name: product.brand.name },
-    offers: {
-      '@type': 'AggregateOffer',
-      priceCurrency: 'LKR',
-      lowPrice: cheapest,
-      highPrice: Math.max(...product.variants.map(effectivePrice)),
-      offerCount: product.variants.length,
-      availability: inStock
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      url: `${env.NEXT_PUBLIC_SITE_URL}/product/${product.slug}`,
-    },
+    ...(prices.length > 0
+      ? {
+          offers: {
+            '@type': 'AggregateOffer',
+            priceCurrency: 'LKR',
+            lowPrice: Math.min(...prices),
+            highPrice: Math.max(...prices),
+            offerCount: prices.length,
+            availability: inStock
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+            url: `${env.NEXT_PUBLIC_SITE_URL}/product/${product.slug}`,
+          },
+        }
+      : {}),
   };
 
   return (
