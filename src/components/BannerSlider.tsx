@@ -30,8 +30,17 @@ export default function BannerSlider({
   interval?: number;
 }) {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  /** Hovering or tabbing in holds the rotation — it must not stop playback. */
+  const [held, setHeld] = useState(false);
+  /** A background tab should stop playback outright. */
+  const [hidden, setHidden] = useState(false);
   const [reduced, setReduced] = useState(false);
+  /**
+   * Slides that have had a src attached stay attached. Removing it to save
+   * bandwidth meant a clip re-downloaded every time the rotation came back
+   * round, which is worse than the download it avoided.
+   */
+  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
@@ -44,10 +53,17 @@ export default function BannerSlider({
    * several megabytes down before the page settled and visitors sat on the
    * poster frame. A banner is decoration — it must never hold up the shop.
    */
-  const shouldLoad = useCallback(
-    (i: number) => i === 0 || i === index || i === (index + 1) % Math.max(count, 1),
-    [index, count],
-  );
+  // Mark the current slide and the next one as loaded, and never unmark.
+  useEffect(() => {
+    setLoaded((prev) => {
+      const next = (index + 1) % Math.max(count, 1);
+      if (prev.has(index) && prev.has(next)) return prev;
+      const updated = new Set(prev);
+      updated.add(index);
+      updated.add(next);
+      return updated;
+    });
+  }, [index, count]);
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
   const next = useCallback(() => setIndex((i) => (i + 1) % count), [count]);
 
@@ -61,7 +77,7 @@ export default function BannerSlider({
 
   // Stop burning cycles and skipping slides while the tab is in the background.
   useEffect(() => {
-    const onVisibility = () => setPaused(document.hidden);
+    const onVisibility = () => setHidden(document.hidden);
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
@@ -73,15 +89,18 @@ export default function BannerSlider({
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
-      if (i === index && !paused && !reduced) {
-        video.currentTime = 0;
+      // Deliberately not gated on `held`: someone resting the cursor over a
+      // banner is watching it, so stopping the clip is the opposite of what
+      // they want. Hover only holds the rotation.
+      if (i === index && !hidden && !reduced) {
+        if (video.currentTime > 0 && video.ended) video.currentTime = 0;
         // Autoplay can be refused; the poster stays visible if so.
         void video.play().catch(() => {});
       } else {
         video.pause();
       }
     });
-  }, [index, paused, reduced]);
+  }, [index, hidden, reduced]);
 
   /**
    * Advance timer.
@@ -92,7 +111,7 @@ export default function BannerSlider({
    * rotation for good.
    */
   useEffect(() => {
-    if (count < 2 || paused || reduced) return;
+    if (count < 2 || held || hidden || reduced) return;
 
     const current = banners[index];
     const video = videoRefs.current[index];
@@ -111,17 +130,17 @@ export default function BannerSlider({
 
     timer.current = setTimeout(next, interval);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [index, paused, reduced, count, interval, banners, next]);
+  }, [index, held, hidden, reduced, count, interval, banners, next]);
 
   if (count === 0) return null;
 
   return (
     <section
       className="slider"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+      onFocusCapture={() => setHeld(true)}
+      onBlurCapture={() => setHeld(false)}
       aria-roledescription="carousel"
       aria-label="Promotions"
     >
@@ -133,7 +152,7 @@ export default function BannerSlider({
           const media = isVideo ? (
             <video
               ref={(el) => { videoRefs.current[i] = el; }}
-              src={shouldLoad(i) ? b.videoUrl ?? undefined : undefined}
+              src={loaded.has(i) ? b.videoUrl ?? undefined : undefined}
               poster={b.image}
               muted
               playsInline
