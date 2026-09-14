@@ -93,7 +93,9 @@ export default function BannerSlider({
       // banner is watching it, so stopping the clip is the opposite of what
       // they want. Hover only holds the rotation.
       if (i === index && !hidden && !reduced) {
-        if (video.currentTime > 0 && video.ended) video.currentTime = 0;
+        // Always rewind on becoming active. A clip paused at its last frame
+        // would otherwise sit there, which looks like a broken still.
+        if (video.ended || video.currentTime > 0) video.currentTime = 0;
         // Autoplay can be refused; the poster stays visible if so.
         void video.play().catch(() => {});
       } else {
@@ -132,6 +134,24 @@ export default function BannerSlider({
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [index, held, hidden, reduced, count, interval, banners, next]);
 
+  /**
+   * While the rotation is held — someone hovering, or reading the slide —
+   * a finished clip would sit frozen on its final frame. Replay it instead;
+   * that is what the viewer is there for.
+   */
+  useEffect(() => {
+    if (!held || hidden || reduced) return;
+    const video = videoRefs.current[index];
+    if (!video) return;
+
+    const onEnded = () => {
+      video.currentTime = 0;
+      void video.play().catch(() => {});
+    };
+    video.addEventListener('ended', onEnded);
+    return () => video.removeEventListener('ended', onEnded);
+  }, [held, hidden, reduced, index]);
+
   if (count === 0) return null;
 
   return (
@@ -160,6 +180,10 @@ export default function BannerSlider({
                  React to mount and call play(). Later slides are started by
                  the effect below when they become active. */
               autoPlay={i === 0}
+              /* A lone banner has nowhere to advance to, so the clip must
+                 loop or it plays once and freezes on its last frame. With
+                 two or more, looping would fight the advance-on-end rule. */
+              loop={count < 2}
               /* Buffer the first clip fully so it plays the moment the page
                  appears; leave the rest until they are nearly up. */
               preload={i === 0 ? 'auto' : 'none'}
