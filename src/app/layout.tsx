@@ -32,14 +32,14 @@ const serif = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: {
-    default: 'iSeven Mobile — Genuine phones in Colombo',
-    template: '%s | iSeven Mobile',
+    default: 'iSeven Mobiles — Genuine phones in Sri Lanka',
+    template: '%s | iSeven Mobiles',
   },
   description:
-    'Warranty-backed smartphones and accessories in Colombo. Browse the stock, then message us on WhatsApp for the real price.',
+    'Warranty-backed smartphones and accessories, island-wide delivery across Sri Lanka. Browse the stock, then message us on WhatsApp for the real price.',
   openGraph: {
     type: 'website',
-    siteName: 'iSeven Mobile',
+    siteName: 'iSeven Mobiles',
     locale: 'en_LK',
     images: ['/logo.png'],
   },
