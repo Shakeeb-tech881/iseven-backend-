@@ -1,60 +1,56 @@
-import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Playfair_Display, Poppins } from 'next/font/google';
+import { Suspense } from 'react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { getNavLinks, getShop, safe, SHOP_FALLBACK } from '@/lib/data';
 import { env } from '@/lib/env';
-import Ambient from '@/components/Ambient';
-import './globals.css';
 
-/**
- * Poppins for headings — geometric, high contrast in bold, and it sits
- * well under the brush-script logo without competing with it.
- * Inter for everything else: built for screens, and its tabular numbers
- * keep variant prices aligned in a column.
- * JetBrains Mono stays on prices and SKUs.
- * Playfair is loaded but used sparingly — see --font-serif in globals.css.
- */
-const display = Poppins({
-  subsets: ['latin'],
-  // Only the weights the site actually uses. Each extra weight is another
-  // file the browser downloads before text settles.
-  weight: ['600', '700'],
-  variable: '--font-display',
-  display: 'swap',
-});
-const body = Inter({ subsets: ['latin'], variable: '--font-body', display: 'swap' });
-const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
-const serif = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['500'],
-  variable: '--font-serif',
-  display: 'swap',
-});
+// The nav and shop settings this shell fetches change rarely (an admin
+// edits them, not a customer), so a 5-minute cache is plenty and spares
+// every page render the DB round trip force-dynamic used to force. The
+// homepage keeps its own force-dynamic for the stock it shows below this
+// shell.
+export const revalidate = 300;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
-  title: {
-    default: 'iSeven Mobiles — Genuine phones in Sri Lanka',
-    template: '%s | iSeven Mobiles',
-  },
-  description:
-    'Warranty-backed smartphones and accessories, island-wide delivery across Sri Lanka. Browse the stock, then message us on WhatsApp for the real price.',
-  openGraph: {
-    type: 'website',
-    siteName: 'iSeven Mobiles',
-    locale: 'en_LK',
-    images: ['/logo.png'],
-  },
-  icons: { icon: '/icon.png', apple: '/logo-mark.png' },
-};
+/** Shell for the public shop. Admin has its own. */
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const [links, shop] = await Promise.all([
+    safe(() => getNavLinks(), [{ href: '/', label: 'Home' }, { href: '/products', label: 'Shop' }], 'nav links'),
+    safe(() => getShop(), SHOP_FALLBACK, 'shop settings'),
+  ]);
 
-export const viewport = { themeColor: '#000000' };
+  // Store details for search engines, sourced from Settings rather than
+  // hardcoded, so /admin/settings stays the one place the shop's public
+  // details live.
+  const storeLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: shop.name,
+    url: env.NEXT_PUBLIC_SITE_URL,
+    telephone: shop.whatsapp ? `+${shop.whatsapp}` : undefined,
+    email: shop.email ?? undefined,
+    address: shop.addressLine ?? undefined,
+    hasMap: shop.mapUrl ?? undefined,
+    openingHours: shop.hours ?? undefined,
+    sameAs: [shop.facebook, shop.instagram, shop.tiktok].filter(
+      (v): v is string => Boolean(v),
+    ),
+    currenciesAccepted: 'LKR',
+    areaServed: 'Sri Lanka',
+  };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable} ${serif.variable}`}>
-      <body>
-        <Ambient />
-        {children}
-      </body>
-    </html>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(storeLd) }}
+      />
+      {/* Header reads the query string to mark the current link, which
+          Next requires be wrapped in Suspense. */}
+      <Suspense fallback={<div className="masthead" style={{ height: 63 }} />}>
+        <Header whatsappNumber={shop.whatsapp} links={links} shopName={shop.name} />
+      </Suspense>
+      <main>{children}</main>
+      <Footer shop={shop} />
+    </>
   );
 }
