@@ -135,6 +135,14 @@ export async function getAllProductSlugs(): Promise<string[]> {
   return (data ?? []).map((r) => r.slug as string);
 }
 
+/** Slug + last-modified for every live product, for the sitemap. */
+export async function getProductSitemapEntries(): Promise<{ slug: string; updatedAt: string }[]> {
+  const { data, error } = await db
+    .from('Product').select('slug, updatedAt').eq('isActive', true);
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ slug: r.slug as string, updatedAt: r.updatedAt as string }));
+}
+
 export async function getBrands(): Promise<Brand[]> {
   const { data, error } = await db
     .from('Brand').select('id, name, slug, logo, tagline')
