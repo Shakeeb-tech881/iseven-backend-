@@ -6,15 +6,60 @@ import ProductTile from '@/components/ProductTile';
 import Filters from '@/components/Filters';
 import BannerSlider from '@/components/BannerSlider';
 
-export const metadata: Metadata = {
-  title: 'All Products',
-  description: 'Every phone and accessory currently in the iSeven Mobile shop, with live prices.',
-};
-
 export const dynamic = 'force-dynamic';
 
 type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const brandSlug = one(sp.brand);
+  const categorySlug = one(sp.category);
+
+  // Any of these narrows a view that's a duplicate of one already
+  // canonicalised elsewhere (or of the plain /products page), so it gets
+  // pointed back rather than left to compete with the page it duplicates.
+  const isNoiseView = [sp.sort, sp.page, sp.search, sp.inStock, sp.condition].some(
+    (v) => one(v) != null && one(v) !== '',
+  );
+
+  if (brandSlug) {
+    const brand = await safe(() => getBrandBySlug(brandSlug), null, 'metadata brand');
+    if (brand) {
+      const canonical = `/products?brand=${brand.slug}`;
+      return {
+        title: `${brand.name} Phones in Sri Lanka`,
+        description: `${brand.name} phones in stock at iSeven Mobile, with live prices — message us on WhatsApp for the real price.`,
+        alternates: { canonical: isNoiseView ? '/products' : canonical },
+        robots: isNoiseView ? { index: false, follow: true } : undefined,
+      };
+    }
+  }
+
+  if (categorySlug) {
+    const category = await safe(() => getCategoryBySlug(categorySlug), null, 'metadata category');
+    if (category) {
+      const canonical = `/products?category=${category.slug}`;
+      return {
+        title: `${category.name} Phones in Sri Lanka`,
+        description: `${category.name} in stock at iSeven Mobile, with live prices — message us on WhatsApp for the real price.`,
+        alternates: { canonical: isNoiseView ? '/products' : canonical },
+        robots: isNoiseView ? { index: false, follow: true } : undefined,
+      };
+    }
+  }
+
+  return {
+    title: 'All Products',
+    description: 'Every phone and accessory currently in the iSeven Mobile shop, with live prices.',
+    alternates: { canonical: '/products' },
+    robots: isNoiseView ? { index: false, follow: true } : undefined,
+  };
+}
 
 export default async function ProductsPage({
   searchParams,
