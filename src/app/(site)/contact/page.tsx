@@ -5,6 +5,7 @@ import { WhatsAppIcon } from '@/components/Icons';
 export const metadata: Metadata = {
   title: 'Contact',
   description: 'Reach iSeven Mobile in Colombo on WhatsApp for prices, stock and trade-ins.',
+  alternates: { canonical: '/contact' },
 };
 
 export default async function ContactPage() {
