@@ -518,3 +518,5 @@ is the one place the shop speaks in its own voice rather than listing
 specifications, so a slower read suits it.
 
 See `migrations/README.md` for the full run order.
+
+## Final SEO Improved
