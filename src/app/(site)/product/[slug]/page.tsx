@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAllProductSlugs, getInstallmentPlans, getProductBySlug, getProducts } from '@/lib/data';
 import { whatsappUrl } from '@/lib/whatsapp';
-import { effectivePrice } from '@/lib/format';
+import { effectivePrice, formatLKR } from '@/lib/format';
 import { env } from '@/lib/env';
 import ProductDetail from '@/components/ProductDetail';
 import ProductTile from '@/components/ProductTile';
@@ -35,12 +35,28 @@ export async function generateMetadata({
   if (!product) return { title: 'Not found' };
 
   const image = product.images[0]?.url;
+
+  // "<name> Price in Sri Lanka — Rs. X" matches how people actually search
+  // for a phone. When nothing is priced there is no honest number to show,
+  // so the title falls back to the plain name rather than inventing one.
+  const prices = product.variants
+    .map(effectivePrice)
+    .filter((n): n is number => n != null);
+  const defaultTitle =
+    prices.length > 0
+      ? `${product.name} Price in Sri Lanka — ${formatLKR(Math.min(...prices))}`
+      : product.name;
+
+  const title = product.metaTitle ?? defaultTitle;
+  const description = product.metaDesc ?? product.shortDesc ?? undefined;
+
   return {
-    title: product.metaTitle ?? product.name,
-    description: product.metaDesc ?? product.shortDesc ?? undefined,
+    title,
+    description,
+    alternates: { canonical: `/product/${product.slug}` },
     openGraph: {
-      title: product.metaTitle ?? product.name,
-      description: product.metaDesc ?? product.shortDesc ?? undefined,
+      title,
+      description,
       images: image ? [image] : undefined,
     },
   };
@@ -101,11 +117,39 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
+  // Mirrors the visible trail below (Shop / brand / product name), with
+  // Home prepended — every breadcrumb list starts at the site root even
+  // though the on-page trail only needs to show what's beneath /products.
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: env.NEXT_PUBLIC_SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${env.NEXT_PUBLIC_SITE_URL}/products` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.brand.name,
+        item: `${env.NEXT_PUBLIC_SITE_URL}/products?brand=${product.brand.slug}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: product.name,
+        item: `${env.NEXT_PUBLIC_SITE_URL}/product/${product.slug}`,
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       <nav className="wrap" style={{ paddingTop: 22 }} aria-label="Breadcrumb">
