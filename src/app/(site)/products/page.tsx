@@ -33,7 +33,7 @@ export async function generateMetadata({
       const canonical = `/products?brand=${brand.slug}`;
       return {
         title: `${brand.name} Phones in Sri Lanka`,
-        description: `${brand.name} phones in stock at iSeven Mobile, with live prices — message us on WhatsApp for the real price.`,
+        description: `${brand.name} phones in stock at iSeven Mobiles, with live prices — message us on WhatsApp for the real price.`,
         alternates: { canonical: isNoiseView ? '/products' : canonical },
         robots: isNoiseView ? { index: false, follow: true } : undefined,
       };
@@ -46,7 +46,7 @@ export async function generateMetadata({
       const canonical = `/products?category=${category.slug}`;
       return {
         title: `${category.name} Phones in Sri Lanka`,
-        description: `${category.name} in stock at iSeven Mobile, with live prices — message us on WhatsApp for the real price.`,
+        description: `${category.name} in stock at iSeven Mobiles, with live prices — message us on WhatsApp for the real price.`,
         alternates: { canonical: isNoiseView ? '/products' : canonical },
         robots: isNoiseView ? { index: false, follow: true } : undefined,
       };
@@ -55,7 +55,7 @@ export async function generateMetadata({
 
   return {
     title: 'All Products',
-    description: 'Every phone and accessory currently in the iSeven Mobile shop, with live prices.',
+    description: 'Every phone and accessory currently at iSeven Mobiles, with live prices and island-wide delivery across Sri Lanka.',
     alternates: { canonical: '/products' },
     robots: isNoiseView ? { index: false, follow: true } : undefined,
   };
