@@ -45,7 +45,7 @@ export async function generateMetadata({
     if (category) {
       const canonical = `/products?category=${category.slug}`;
       return {
-        title: `${category.name} Phones in Sri Lanka`,
+        title: `${category.name} in Sri Lanka`,
         description: `${category.name} in stock at iSeven Mobiles, with live prices — message us on WhatsApp for the real price.`,
         alternates: { canonical: isNoiseView ? '/products' : canonical },
         robots: isNoiseView ? { index: false, follow: true } : undefined,
