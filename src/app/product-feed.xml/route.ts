@@ -22,6 +22,20 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
+// Merchant Center caps an item id at 50 characters. Short slugs are used
+// as-is so their ids never change; longer ones are trimmed and given a
+// short hash of the full slug so two long slugs can't collide.
+function feedId(slug: string): string {
+  if (slug.length <= 50) return slug;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < slug.length; i++) {
+    h ^= slug.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const suffix = (h >>> 0).toString(36);
+  return `${slug.slice(0, 50 - suffix.length - 1)}-${suffix}`;
+}
+
 function cdata(value: string): string {
   return `<![CDATA[${value.replace(/]]>/g, ']]&gt;')}]]>`;
 }
@@ -39,7 +53,7 @@ export async function GET() {
 
       return [
         '  <item>',
-        `    <g:id>${escapeXml(p.slug)}</g:id>`,
+        `    <g:id>${escapeXml(feedId(p.slug))}</g:id>`,
         `    <g:title>${cdata(p.name)}</g:title>`,
         p.description ? `    <g:description>${cdata(p.description)}</g:description>` : null,
         `    <link>${escapeXml(link)}</link>`,
