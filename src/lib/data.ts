@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from './supabase';
 import { mapBanner, mapBrand, mapCategory, mapPlan, mapProduct, mapProductCard } from './mappers';
-import type { Banner, Brand, Category, InstallmentPlan, Product, ProductCard } from './types';
+import type { Banner, Brand, Category, Condition, InstallmentPlan, Product, ProductCard } from './types';
 import { isUsableImage } from './format';
 
 /**
@@ -141,6 +141,78 @@ export async function getProductSitemapEntries(): Promise<{ slug: string; update
     .from('Product').select('slug, updatedAt').eq('isActive', true);
   if (error) throw error;
   return (data ?? []).map((r) => ({ slug: r.slug as string, updatedAt: r.updatedAt as string }));
+}
+
+/** One line per product, shaped for the Google Merchant Center feed. */
+export interface ProductFeedEntry {
+  slug: string;
+  name: string;
+  description: string | null;
+  condition: Condition;
+  brandName: string;
+  image: string | null;
+  additionalImages: string[];
+  price: number | null;
+  availability: 'in stock' | 'out of stock' | 'preorder';
+}
+
+export async function getProductFeedEntries(): Promise<ProductFeedEntry[]> {
+  const { data, error } = await db
+    .from('Product')
+    .select(`
+      slug, name, shortDesc, description, metaDesc, condition,
+      brand:Brand!Product_brandId_fkey ( name ),
+      variants:ProductVariant ( price, salePrice, stockStatus, isActive ),
+      images:ProductImage ( url, sortOrder )
+    `)
+    .eq('isActive', true);
+  if (error) throw error;
+
+  const asPrice = (v: unknown): number | null => {
+    if (v === null || v === undefined) return null;
+    const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  return (data ?? [])
+    .map((r) => {
+      type VariantRow = { price: unknown; salePrice: unknown; stockStatus: string; isActive: boolean };
+      type ImageRow = { url: string; sortOrder: number | null };
+      const row = r as unknown as {
+        slug: string; name: string; shortDesc: string | null; description: string | null;
+        metaDesc: string | null; condition: Condition;
+        brand: { name: string } | null;
+        variants: VariantRow[]; images: ImageRow[];
+      };
+
+      const activeVariants = (row.variants ?? []).filter((v) => v.isActive);
+      const inStock = activeVariants.some((v) => v.stockStatus === 'IN_STOCK');
+      const preOrder = !inStock && activeVariants.some((v) => v.stockStatus === 'PRE_ORDER');
+      const prices = activeVariants
+        .map((v) => asPrice(v.salePrice) ?? asPrice(v.price))
+        .filter((n): n is number => n != null);
+
+      const images = (row.images ?? [])
+        .slice()
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map((i) => i.url)
+        .filter(isUsableImage);
+
+      return {
+        slug: row.slug,
+        name: row.name,
+        description: row.metaDesc ?? row.shortDesc ?? row.description ?? null,
+        condition: row.condition,
+        brandName: row.brand?.name ?? 'iSeven Mobiles',
+        image: images[0] ?? null,
+        additionalImages: images.slice(1, 11),
+        price: prices.length > 0 ? Math.min(...prices) : null,
+        availability: (inStock ? 'in stock' : preOrder ? 'preorder' : 'out of stock') as ProductFeedEntry['availability'],
+      };
+    })
+    // Google requires a price and an image on every item — anything without
+    // both would just be rejected, so it is left out rather than submitted.
+    .filter((p) => p.image != null && p.price != null);
 }
 
 export async function getBrands(): Promise<Brand[]> {
